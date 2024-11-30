@@ -10,6 +10,7 @@
 | WAI, Yuk Shan | 20856517  | yswai |
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Implementation Procedures](#Implementation)
 - [Advantage on Serverless Architecture](#Advantage)
@@ -22,7 +23,7 @@ This project presents two deployment approaches of the ResNet machine learning m
 
 ## Architecture Overview
 Our serverless approach is implemented based on AWS Lambda, the FaaS service provided by AWS that enables users to run a function. The schematics of our serverless architecture could be found in Figure 1.
-
+<img width="855" alt="fig1" src="https://github.com/user-attachments/assets/11faf3f5-8609-4832-ae5b-418e9174c828">
 Figure 1: AWS Lambda Architecture Overview
 
 Our entire serverless program is set up in the following steps:
@@ -51,12 +52,14 @@ Original and processed image size, time needed to parse JSON input
 Execution time: Inference time, Initialization time, invocation time, overhead time
 Function and trace details: HTTP status, request ID, trace ID
 
+<img width="896" alt="fig2" src="https://github.com/user-attachments/assets/b71ccd6f-6a77-4ba0-bc2c-336298a57fb2">
 Figure 2: Amazon X-Ray Trace Details
  
 Additionally, the capture the trend and long-term performance of the metrics, AWS CloudWatch is used to display metrics over a period of time. A CloudWatch dashboard (Lambda Insights, see figure) is created for monitoring the performance of a 1-hour testing, where lambda is called every 30 seconds continuously.
-
+<img width="858" alt="fig3" src="https://github.com/user-attachments/assets/54783e62-0b67-41fc-a943-b789edacad39">
 
 ## Server Approach
+
 We implemented the second server-based approach in a separate python script, this script load the pre-trained ResNet-50 model and perform classification locally. Performance metrics are then measured.
 
 ## Performance Analysis
