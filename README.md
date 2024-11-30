@@ -11,6 +11,7 @@
 
 ## Table of Contents
 
+- [File Description]
 - [Overview]
 - [Architecture Overview]
 - [Inference Rundown]
@@ -19,6 +20,21 @@
 - [Performance Analysis]
 - [Serverless vs Server]
 - [Conclusion]
+
+##File Description
+The `serverless` folder holds the AWS Lambda implementation, the files inside serve the following purpose:
+- `backend.py` serves as the backend of our image classifier, it uses Flask API
+- `index.html` is the frontend that takes in user input image and display classification results and other metrics
+- `lambda_function.py` is our lambda function script deployed in AWS Lambda via container
+- `Dockerfile` is the Dockerfile that we build the container image from
+- `requirements.txt` is the list of dependencies to the lambda function script
+- `deploy.py` is a helper function during development, it sets up the monitoring tools including CloudWatch Dashboard and deal with role permissions
+- `performance_test.py` is a testing script, this script passes images from the `.\test_images` directory into the Lambda API continuously for a certain interval, the duration and interval between each call can be set inside the `main()` function
+
+Additionally, we have a `local_server.py` that represents the local server-based approach. Please remember to install all the necessary dependencies before running this script
+The `test-api.py` is a helper function during development, it's sole purpose is to test whether the Lambda API works or not. A JSON should be returned 
+
+
 
 ## Overview
 This project presents two deployment approaches of the ResNet machine learning model for image classification. The first implementation is serverless, in which the ResNet model is deployed as a lambda function in AWS Lambda, a CPU-based FaaS framework. This approach is ‘serverless’ in the sense that no maintenance or monitoring of servers are needed. The second implementation is a server-based local approach, where a Python deployment script is written, using the ResNet model to perform inference in the local machine. The performance metrics of these two approaches would be monitored, displayed, and analyzed. The aim of this project is to compare the attributes of these two approaches, and conclude which approach is better in different scenario.
