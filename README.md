@@ -21,7 +21,7 @@
 - [Serverless vs Server]
 - [Conclusion]
 
-##File Description
+## File Description
 The `serverless` folder holds the AWS Lambda implementation, the files inside serve the following purpose:
 - `backend.py` serves as the backend of our image classifier, it uses Flask API
 - `index.html` is the frontend that takes in user input image and display classification results and other metrics
