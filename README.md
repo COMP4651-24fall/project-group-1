@@ -62,10 +62,10 @@ Figure 2: Amazon X-Ray Trace Details
  
 Additionally, the capture the trend and long-term performance of the metrics, AWS CloudWatch is used to display metrics over a period of time. A CloudWatch dashboard (Lambda Insights, see figure) is created for monitoring the performance of a 1-hour testing, where lambda is called every 30 seconds continuously.
 
-<img width="858" alt="fig3" src="https://github.com/user-attachments/assets/54783e62-0b67-41fc-a943-b789edacad39">
+<img width="852" alt="fig3" src="https://github.com/user-attachments/assets/c097b27e-8865-4c5a-9aee-e896c2170d6e">
+
 
 ## Server Approach
-
 We implemented the second server-based approach in a separate python script, this script load the pre-trained ResNet-50 model and perform classification locally. Performance metrics are then measured.
 
 ## Performance Analysis
