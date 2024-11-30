@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResNet Classification with X-Ray Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Image Upload Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <h2 class="text-2xl font-bold mb-4">ResNet Image Classifier</h2>
+            
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Image
+                </label>
+                <input
+                    type="file"
+                    accept="image/*"
+                    id="imageInput"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100"
+                >
+            </div>
+
+            <div id="previewContainer" class="mb-6 hidden">
+                <img id="preview" class="max-w-md mx-auto rounded-lg shadow">
+            </div>
+
+            <button
+            id="classifyButton"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+            disabled
+            >
+                Classify Image
+            </button>
+        </div>
+
+        <!-- Classification Results -->
+        <div id="resultsContainer" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
+            <h3 class="text-xl font-bold mb-4">Classification Results</h3>
+            <div id="predictions" class="space-y-2"></div>
+        </div>
+
+        <!-- Add this after the resultsContainer div and before the traceContainer div -->
+<div id="metricsContainer" class="bg-white rounded-lg shadow-lg p-6 mb-6 hidden">
+    <h3 class="text-xl font-bold mb-4">Performance Metrics</h3>
+
+    <!-- Detailed Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Memory Details -->
+        <div class="bg-blue-50 p-4 rounded-lg">
+            <h4 class="font-semibold mb-2">Memory Details</h4>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Used Memory</span>
+                    <span id="memoryUsed" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Memory Utilization</span>
+                    <span id="memoryUtil" class="font-medium"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Request Details -->
+        <div class="bg-purple-50 p-4 rounded-lg">
+            <h4 class="font-semibold mb-2">Request Details</h4>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Original Image</span>
+                    <span id="originalSize" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Processed Image</span>
+                    <span id="processedSize" class="font-medium"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Pre-processing Time</span>
+                    <span id="preProcessingTime" class="font-medium"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <!-- Trace Information -->
+<div id="traceContainer" class="bg-white rounded-lg shadow-lg p-6 mt-6 hidden">
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold">X-Ray Trace Information</h3>
+        <div id="lastUpdate" class="text-sm text-gray-500"></div>
+    </div>
+
+    <!-- Basic Info -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="bg-blue-50 p-4 rounded-lg">
+            <h4 class="font-semibold mb-2">Function Details</h4>
+            <div class="space-y-1 text-sm">
+                <div><span class="font-medium">Name:</span> <span id="functionName"></span></div>
+                <div><span class="font-medium">Request ID:</span> <span id="requestId" class="font-mono text-xs"></span></div>
+                <div><span class="font-medium">HTTP Status:</span> <span id="httpStatus"></span></div>
+            </div>
+        </div>
+
+        <div class="bg-green-50 p-4 rounded-lg">
+            <h4 class="font-semibold mb-2">Execution Times</h4>
+            <div class="space-y-1 text-sm">
+                <div><span class="font-medium">Total Duration:</span> <span id="totalDuration"></span></div>
+                <div><span class="font-medium">Initialization:</span> <span id="initTime"></span></div>
+                <div><span class="font-medium">Invocation:</span> <span id="invocationTime"></span></div>
+                <div><span class="font-medium">Overhead:</span> <span id="overheadTime"></span></div>
+            </div>
+        </div>
+
+        <div class="bg-purple-50 p-4 rounded-lg">
+            <h4 class="font-semibold mb-2">Trace Details</h4>
+            <div class="space-y-1 text-sm">
+                <div><span class="font-medium">Trace ID:</span> <span id="traceId" class="font-mono text-xs break-all"></span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline Chart -->
+    <div class="mb-6">
+        <h4 class="font-semibold mb-4">Execution Timeline</h4>
+        <div class="h-60">
+            <canvas id="timelineChart"></canvas>
+        </div>
+    </div>
+</div>
+
+
+
+    <script>
+        // Global variables
+        let timelineChart = null;
+        let traceUpdateInterval = null;
+        let updateCount = 0;
+        let processingTimesChart = null;
+        let resourceChart = null;
+
+        // Add this at the start of your script
+        let IMAGENET_CLASSES = {};
+
+        // Load class names when the page loads
+        async function loadClassNames() {
+        try {
+            const response = await fetch('/imagenet_classes.txt');
+            const text = await response.text();
+            
+            text.split('\n').forEach(line => {
+                if (line.trim()) {
+                    const [number, name] = line.split(',', 2);  // Split only on first comma
+                    if (number && name) {
+                        IMAGENET_CLASSES[parseInt(number.trim())] = name.trim();
+                    }
+                }
+            });
+            console.log('Loaded ImageNet classes:', IMAGENET_CLASSES); // Debug log
+        } catch (error) {
+            console.error('Error loading ImageNet classes:', error);
+        }
+    }
+
+
+        // Call this when the page loads
+        document.addEventListener('DOMContentLoaded', loadClassNames);
+
+        
+
+        // Utility functions
+        function formatDuration(ms) {
+            return `${(ms).toFixed(2)}ms`;
+        }
+
+        function formatTimestamp(timestamp) {
+            return new Date(timestamp).toLocaleTimeString();
+        }
+
+        // File handling
+        document.getElementById('imageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    document.getElementById('preview').src = reader.result;
+                    document.getElementById('previewContainer').classList.remove('hidden');
+                    document.getElementById('classifyButton').disabled = false;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Classification
+        document.getElementById('classifyButton').addEventListener('click', async function() {
+            const file = document.getElementById('imageInput').files[0];
+            if (!file) return;
+
+            this.disabled = true;
+            this.classList.add('bg-gray-400');
+            this.classList.remove('bg-indigo-600', 'hover:bg-indigo-700');
+
+            try {
+                const reader = new FileReader();
+                reader.onloadend = async function() {
+                    const base64Data = reader.result.split(',')[1];
+
+                    const response = await fetch('http://localhost:5000/classify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            image: base64Data
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        displayResults(data);
+                        startTraceUpdates();
+                    } else {
+                        alert(data.error || 'Classification failed');
+                    }
+                };
+                reader.readAsDataURL(file);
+            } catch (error) {
+                alert('Error classifying image');
+            } finally {
+                this.disabled = false;
+                this.textContent = 'Classify Image';
+            }
+        });
+
+
+
+        
+
+        // Display results
+        // Update the displayResults function in the script section
+        function displayResults(data) {
+        const container = document.getElementById('resultsContainer');
+        const predictionsDiv = document.getElementById('predictions');
+        container.classList.remove('hidden');
+        
+
+        //Make button purple
+        const button = document.getElementById('classifyButton');
+        button.classList.add('bg-indigo-600', 'hover:bg-indigo-700');
+        button.classList.remove('bg-gray-400');
+
+        // Clear previous results
+        predictionsDiv.innerHTML = '';
+        
+        // Display new predictions
+        data.predictions?.forEach(pred => {
+            const predDiv = document.createElement('div');
+            predDiv.className = 'mb-4';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'bg-gray-50 p-3 rounded';
+            
+            // Get the class name from our mapping and fall back to label if not found
+            console.log('Class ID:', pred.class_id); // Debug log
+            console.log('Found class name:', IMAGENET_CLASSES[pred.class_id]); // Debug log
+            const className = IMAGENET_CLASSES[pred.class_id] || pred.label;
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'flex justify-between items-center mb-2';
+            headerDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="font-medium text-gray-900">${className}</span>
+                </div>
+                <span class="text-indigo-600 font-semibold">${pred.probability.toFixed(2)}%</span>
+            `;
+            
+            const barContainer = document.createElement('div');
+            barContainer.className = 'w-full bg-gray-200 rounded-full h-2';
+            
+            const bar = document.createElement('div');
+            bar.className = 'bg-indigo-600 h-2 rounded-full transition-all duration-500';
+            bar.style.width = `${pred.probability}%`;
+            
+            barContainer.appendChild(bar);
+            contentDiv.appendChild(headerDiv);
+            contentDiv.appendChild(barContainer);
+            predDiv.appendChild(contentDiv);
+            predictionsDiv.appendChild(predDiv);
+
+            displayMetrics(data);
+        });
+    }
+
+        // Trace monitoring
+        async function updateTrace() {
+        try {
+            // Increment counter
+            updateCount++;
+            
+            const response = await fetch('http://localhost:5000/traces/latest');
+            const data = await response.json();
+            
+            if (response.ok && data.trace) {
+                displayTrace(data.trace, data.lastUpdate);
+                
+                // Stop after 5 updates
+                if (updateCount >= 10) {
+                    clearInterval(traceUpdateInterval);
+                    console.log('Completed 10 trace updates');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating trace:', error);
+            clearInterval(traceUpdateInterval);
+        }
+    }
+        
+
+        function startTraceUpdates() {
+    // Reset counter and clear existing interval
+    updateCount = 0;
+    if (traceUpdateInterval) {
+        clearInterval(traceUpdateInterval);
+    }
+    document.getElementById('traceContainer').classList.remove('hidden');
+    updateTrace();
+    traceUpdateInterval = setInterval(updateTrace, 5000); // Changed to 500ms for more frequent updates
+    }
+
+        function displayTrace(traceData) {
+    document.getElementById('traceContainer').classList.remove('hidden');
+    
+    // Find the function execution segment and service segment
+    const functionSegment = traceData.Segments.find(s => s.Type === 'AWS::Lambda::Function');
+    const serviceSegment = traceData.Segments.find(s => s.Type === 'AWS::Lambda');
+    
+    if (functionSegment && serviceSegment) {
+        // Update basic information
+        document.getElementById('functionName').textContent = functionSegment.Name;
+        document.getElementById('requestId').textContent = serviceSegment.RequestId;
+        document.getElementById('httpStatus').textContent = serviceSegment.HttpStatus;
+        document.getElementById('traceId').textContent = traceData.Id;
+        //document.getElementById('functionArn').textContent = functionSegment.FunctionArn;
+        document.getElementById('lastUpdate').textContent = `Last updated: ${formatTimestamp(new Date())}`;
+        
+        // Update timing information
+        document.getElementById('totalDuration').textContent = formatDuration(traceData.Duration * 1000);
+        
+        // Process subsegments
+        const subsegments = functionSegment.Subsegments;
+        const initSegment = subsegments.find(s => s.Name === 'Initialization');
+        const invocationSegment = subsegments.find(s => s.Name === 'Invocation');
+        const overheadSegment = subsegments.find(s => s.Name === 'Overhead');
+        
+        document.getElementById('initTime').textContent = 
+            initSegment ? formatDuration(initSegment.Duration) : 'N/A';
+        document.getElementById('invocationTime').textContent = 
+            invocationSegment ? formatDuration(invocationSegment.Duration) : 'N/A';
+        document.getElementById('overheadTime').textContent = 
+            overheadSegment ? formatDuration(overheadSegment.Duration) : 'N/A';
+            
+        // Update timeline chart
+        updateTimelineChart(subsegments);
+    }
+}
+
+function updateTimelineChart(subsegments) {
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+
+    timelineChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: subsegments.map(s => s.Name),
+            datasets: [{
+                label: 'Duration (ms)',
+                data: subsegments.map(s => s.Duration),
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.5)',  // Initialization
+                    'rgba(75, 192, 192, 0.5)',  // Invocation
+                    'rgba(255, 159, 64, 0.5)'   // Overhead
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Duration (ms)'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatDuration(context.raw);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Function to update the metrics display
+function displayMetrics(data) {
+    const metrics = data.performance_metrics;
+    const imageSize = data.image_size;
+    
+    // Show metrics container
+    document.getElementById('metricsContainer').classList.remove('hidden');
+
+    
+    // Update memory details
+    document.getElementById('memoryUsed').textContent = 
+        `${(metrics.memory_used_mb || 0).toFixed(2)} MB`;
+    document.getElementById('memoryUtil').textContent = 
+        `${(metrics.memory_utilization || 0).toFixed(2)}%`;
+    
+    // Update request details
+    document.getElementById('originalSize').textContent = 
+        imageSize?.original ? `${imageSize.original[0]}x${imageSize.original[1]}` : 'N/A';
+    document.getElementById('processedSize').textContent = 
+        imageSize?.processed ? `${imageSize.processed[0]}x${imageSize.processed[1]}` : 'N/A';
+
+
+    // Update image processing pipeline metrics with correct names
+    document.getElementById('preProcessingTime').textContent = 
+        `${(metrics.parse_time_ms || 0).toFixed(2)} ms`;
+
+}
+
+
+
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (traceUpdateInterval) {
+                clearInterval(traceUpdateInterval);
+            }
+        });
+    </script>
+</body>
+</html>
