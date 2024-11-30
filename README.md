@@ -34,6 +34,8 @@ The `serverless` folder holds the AWS Lambda implementation, the files inside se
 Additionally, we have a `local_server.py` that represents the local server-based approach. Please remember to install all the necessary dependencies before running this script
 The `test-api.py` is a helper function during development, it's sole purpose is to test whether the Lambda API works or not. A JSON should be returned 
 
+The two `.png` files are the performance metric data collected from 30 minutes continuous testing as mentioned in the report.
+
 
 
 ## Overview
@@ -76,7 +78,7 @@ Function and trace details: HTTP status, request ID, trace ID
 
 Figure 2: Amazon X-Ray Trace Details
  
-Additionally, the capture the trend and long-term performance of the metrics, AWS CloudWatch is used to display metrics over a period of time. A CloudWatch dashboard (Lambda Insights, see figure) is created for monitoring the performance of a 1-hour testing, where lambda is called every 30 seconds continuously.
+Additionally, the capture the trend and long-term performance of the metrics, AWS CloudWatch is used to display metrics over a period of time. A CloudWatch dashboard (Lambda Insights, see figure) is created for monitoring the performance of a 30 minutes testing, where lambda is called every 30 seconds continuously. The testing is initiated through `performance_test.py`
 
 <img width="852" alt="fig3" src="https://github.com/user-attachments/assets/c097b27e-8865-4c5a-9aee-e896c2170d6e">
 
